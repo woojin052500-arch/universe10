@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { asset } from '@/lib/path';
 
 /**
  * 천체 사진. image.status === 'placeholder' 이거나
@@ -41,7 +42,7 @@ export default function ObjectImage({ obj, fill = false, radius = 0 }) {
     <div style={box}>
       {/* next/image 대신 img — 외부 최적화 설정 없이 바로 동작 */}
       <img
-        src={`/objects/${obj.image.slug}.jpg`}
+        src={asset(`/objects/${obj.image.slug}.jpg`)}
         alt={`${obj.nameKo} — 촬영 곽준성`}
         onError={() => setFailed(true)}
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}

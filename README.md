@@ -16,6 +16,8 @@
 ![Supabase](https://img.shields.io/badge/Supabase-준비중-3ECF8E?style=flat-square&logo=supabase)
 ![Status](https://img.shields.io/badge/status-MVP-E8737F?style=flat-square)
 
+### 🔗 [https://universe10.vercel.app](https://universe10.vercel.app)
+
 </div>
 
 ---
@@ -81,6 +83,20 @@ npm run dev
 ```bash
 npm run build && npm start
 ```
+
+## 배포
+
+**Vercel** 로 배포합니다. `main` 브랜치에 푸시하면 자동으로 재배포됩니다.
+
+최초 연결:
+
+1. [vercel.com](https://vercel.com) → GitHub 로그인
+2. **Add New → Project** → `universe10` Import
+3. 설정 변경 없이 **Deploy** (Next.js 자동 인식)
+
+진도는 브라우저 localStorage에 저장되므로 별도 환경변수는 없습니다.
+Supabase 연동 시 `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` 를
+Vercel 프로젝트 설정에 추가하세요.
 
 ---
 
