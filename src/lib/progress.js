@@ -1,70 +1,79 @@
 'use client';
 
 import { OBJECTS, LEVELS, objectsOfLevel } from '@/data/content';
+import { supabase, isSupabaseReady } from './supabase';
 
 const KEY = 'universe10.progress.v1';
 
-/** 저장된 진도 읽기 → { completed: string[] } */
-export function readProgress() {
-  if (typeof window === 'undefined') return { completed: [] };
+/* ─────────── 로컬 (비로그인) ─────────── */
+export function readLocal() {
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return { completed: [] };
-    const parsed = JSON.parse(raw);
-    return { completed: Array.isArray(parsed.completed) ? parsed.completed : [] };
-  } catch {
-    return { completed: [] };
-  }
+    const p = raw ? JSON.parse(raw) : null;
+    return Array.isArray(p?.completed) ? p.completed : [];
+  } catch { return []; }
 }
-
-export function writeProgress(p) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(KEY, JSON.stringify(p));
+export function writeLocal(completed) {
+  if (typeof window !== 'undefined')
+    localStorage.setItem(KEY, JSON.stringify({ completed }));
 }
-
-/** 천체 완료 처리 → 새 진도 반환 */
-export function completeObject(id) {
-  const p = readProgress();
-  if (!p.completed.includes(id)) p.completed = [...p.completed, id];
-  writeProgress(p);
-  return p;
-}
-
-export function resetProgress() {
+export function clearLocal() {
   if (typeof window !== 'undefined') localStorage.removeItem(KEY);
 }
 
-/** 레벨이 열렸는지 — 이전 레벨에서 unlockAt개 이상 완료해야 함 */
+/* 하위호환 (기존 코드에서 쓰던 이름) */
+export const readProgress  = () => ({ completed: readLocal() });
+export const resetProgress = clearLocal;
+
+/* ─────────── 서버 (로그인) ─────────── */
+export async function fetchRemote(userId) {
+  if (!isSupabaseReady || !userId) return null;
+  const { data, error } = await supabase
+    .from('progress').select('object_id').eq('user_id', userId);
+  if (error) { console.warn('progress fetch failed', error.message); return null; }
+  return data.map((r) => r.object_id);
+}
+
+export async function pushRemote(userId, ids) {
+  if (!isSupabaseReady || !userId || !ids.length) return;
+  const rows = ids.map((object_id) => ({ user_id: userId, object_id }));
+  const { error } = await supabase.from('progress').upsert(rows, { onConflict: 'user_id,object_id' });
+  if (error) console.warn('progress push failed', error.message);
+}
+
+export async function clearRemote(userId) {
+  if (!isSupabaseReady || !userId) return;
+  await supabase.from('progress').delete().eq('user_id', userId);
+}
+
+/* ─────────── 계산 로직 ─────────── */
 export function isLevelUnlocked(levelId, completed) {
   const lv = LEVELS.find((l) => l.id === levelId);
   if (!lv || lv.unlockAt === 0) return true;
   const prev = objectsOfLevel(levelId - 1);
-  const done = prev.filter((o) => completed.includes(o.id)).length;
-  return done >= lv.unlockAt;
+  return prev.filter((o) => completed.includes(o.id)).length >= lv.unlockAt;
 }
 
-/** 현재 도달한 최대 거리 라벨 = "나의 우주" */
 export function currentScale(completed) {
-  if (!completed.length) return '5 m';
+  if (!completed?.length) return '5 m';
   const done = OBJECTS.filter((o) => completed.includes(o.id));
-  const far = done.reduce((a, b) => (b.ly > a.ly ? b : a), done[0]);
-  return far.scaleLabel;
+  if (!done.length) return '5 m';
+  return done.reduce((a, b) => (b.ly > a.ly ? b : a), done[0]).scaleLabel;
 }
 
-/** 레벨별 진행률 */
 export function levelStats(levelId, completed) {
   const list = objectsOfLevel(levelId);
   const done = list.filter((o) => completed.includes(o.id)).length;
   return { done, total: list.length, ratio: list.length ? done / list.length : 0 };
 }
 
-/** 이 천체를 풀면 다음 레벨이 열리는가 (레벨업 연출 판단용) */
-export function willUnlockNext(objId, completedBefore) {
+/** 이 천체를 풀면 새로 열리는 레벨 id (없으면 null) */
+export function willUnlockNext(objId, before) {
   const obj = OBJECTS.find((o) => o.id === objId);
   if (!obj) return null;
   const next = obj.level + 1;
   if (!LEVELS.some((l) => l.id === next)) return null;
-  const before = isLevelUnlocked(next, completedBefore);
-  const after = isLevelUnlocked(next, [...completedBefore, objId]);
-  return !before && after ? next : null;
+  return !isLevelUnlocked(next, before) && isLevelUnlocked(next, [...before, objId])
+    ? next : null;
 }

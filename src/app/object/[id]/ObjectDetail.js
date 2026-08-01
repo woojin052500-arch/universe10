@@ -5,15 +5,15 @@ import { useRouter, useParams } from 'next/navigation';
 import ObjectImage from '@/components/ObjectImage';
 import { IconBack, IconCheck } from '@/components/Icons';
 import { getObject, getLevel, objectsOfLevel } from '@/data/content';
-import { readProgress, levelStats } from '@/lib/progress';
+import useProgress from '@/lib/useProgress';
+import { levelStats } from '@/lib/progress';
 
 export default function ObjectDetail() {
   const { id } = useParams();
   const router = useRouter();
   const obj = getObject(id);
-  const [completed, setCompleted] = useState([]);
-
-  useEffect(() => { setCompleted(readProgress().completed); }, []);
+  const { completed: prog } = useProgress();
+  const completed = prog || [];
 
   if (!obj) {
     return (

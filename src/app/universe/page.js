@@ -1,21 +1,19 @@
 'use client';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Background from '@/components/Background';
 import TabBar from '@/components/TabBar';
+import SiteHeader from '@/components/SiteHeader';
 import ObjectImage from '@/components/ObjectImage';
-import { IconOrbit, IconLock, IconNext, IconCheck } from '@/components/Icons';
+import { IconLock, IconNext, IconCheck } from '@/components/Icons';
 import { LEVELS, objectsOfLevel } from '@/data/content';
-import { readProgress, isLevelUnlocked, currentScale, levelStats } from '@/lib/progress';
+import useProgress from '@/lib/useProgress';
+import { isLevelUnlocked, currentScale, levelStats } from '@/lib/progress';
 
 /* 동심원 반지름 (레벨 1이 가장 안쪽) */
-const RADIUS = [65, 114, 163];
+const RADIUS = [78, 138, 196];   // Lv.2에 천체가 17개라 간격을 넓혔습니다
 
 export default function UniversePage() {
-  const [completed, setCompleted] = useState(null);   // null = 아직 로딩 전 (SSR 불일치 방지)
-
-  useEffect(() => { setCompleted(readProgress().completed); }, []);
-  if (completed === null) return <><Background /><main className="page" /></>;
+  const { completed } = useProgress();
 
   const scale = currentScale(completed);
   // 열려 있는 레벨 중 가장 높은 것 = 현재 레벨
@@ -28,12 +26,7 @@ export default function UniversePage() {
     <>
       <Background variant="map" />
       <main className="page with-tabs">
-        <header className="top">
-          <div className="logo"><IconOrbit size={20} style={{ color: 'var(--lv3)' }} /> universe10</div>
-          <nav className="gnav">
-            <a>소개</a><a className="on">우주 지도</a><a>관측 칼럼</a><a>도감</a>
-          </nav>
-        </header>
+        <SiteHeader active="우주 지도" completed={completed} />
 
         <div style={{ display: 'flex', justifyContent: 'space-between',
           alignItems: 'flex-end', marginTop: 6 }}>
@@ -68,20 +61,19 @@ export default function UniversePage() {
             const unlocked = isLevelUnlocked(lv.id, completed);
             const list = objectsOfLevel(lv.id);
             return list.map((o, oi) => {
-              const a = (oi / list.length) * Math.PI * 2 - Math.PI / 2 + li * 0.4;
+              const a = (oi / list.length) * Math.PI * 2 - Math.PI / 2 + li * 0.55;
               const r = RADIUS[li];
               const done = completed.includes(o.id);
               return (
                 <Link key={o.id} href={unlocked ? `/object/${o.id}` : '#'}
-                  className="node"
-                  aria-label={o.nameKo}
+                  className="node" aria-label={o.nameKo}
                   title={unlocked ? o.nameKo : '잠김'}
                   style={{
                     left: `calc(50% + ${Math.cos(a) * r}px)`,
                     top: `calc(47% + ${Math.sin(a) * r}px)`,
-                    width: done ? 13 : 9, height: done ? 13 : 9,
-                    background: unlocked ? lv.color : `${lv.color}44`,
-                    boxShadow: done ? `0 0 0 5px ${lv.color}33` : 'none',
+                    width: done ? 12 : 7, height: done ? 12 : 7,
+                    background: unlocked ? lv.color : `${lv.color}3A`,
+                    boxShadow: done ? `0 0 0 4px ${lv.color}2E, 0 0 14px ${lv.color}88` : 'none',
                     pointerEvents: unlocked ? 'auto' : 'none',
                   }} />
               );
@@ -97,7 +89,7 @@ export default function UniversePage() {
             const unlocked = isLevelUnlocked(lv.id, completed);
             return (
               <div key={lv.id} className="ring-label"
-                style={{ top: `calc(47% - ${RADIUS[i] + 22}px)`,
+                style={{ top: `calc(47% - ${RADIUS[i] + 20}px)`,
                   color: unlocked ? lv.color : `${lv.color}9E`,
                   fontWeight: unlocked ? 700 : 500 }}>
                 {!unlocked && <IconLock size={11} />}

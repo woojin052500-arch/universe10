@@ -5,7 +5,8 @@ import Background from '@/components/Background';
 import LevelUpOverlay from '@/components/LevelUpOverlay';
 import { IconClose, IconCheck } from '@/components/Icons';
 import { getObject, getLevel, objectsOfLevel } from '@/data/content';
-import { readProgress, completeObject, currentScale, willUnlockNext } from '@/lib/progress';
+import useProgress from '@/lib/useProgress';
+import { currentScale, willUnlockNext } from '@/lib/progress';
 
 export default function QuizView() {
   const { id } = useParams();
@@ -15,8 +16,7 @@ export default function QuizView() {
   const [picked, setPicked] = useState(null);   // 선택한 보기 index
   const [levelUp, setLevelUp] = useState(null); // { from, to, levelId }
 
-  const [before, setBefore] = useState([]);
-  useEffect(() => { setBefore(readProgress().completed); }, []);
+  const { completed, complete } = useProgress();
 
   if (!obj) return <main className="page" />;
 
@@ -31,10 +31,11 @@ export default function QuizView() {
     if (i !== obj.quiz.answer) return;
 
     // 정답 → 진도 저장 + 레벨업 판정
-    const fromScale = currentScale(before);
-    const unlocked = willUnlockNext(obj.id, before);
-    completeObject(obj.id);
-    const toScale = currentScale([...before, obj.id]);
+    const snap = completed || [];
+    const fromScale = currentScale(snap);
+    const unlocked = willUnlockNext(obj.id, snap);
+    complete(obj.id);
+    const toScale = currentScale([...snap, obj.id]);
 
     if (unlocked) {
       setTimeout(() => setLevelUp({ from: fromScale, to: toScale, levelId: unlocked }), 900);
