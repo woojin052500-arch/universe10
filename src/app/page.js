@@ -14,7 +14,7 @@ export default function Landing() {
           </div>
           <nav className="gnav">
             <Link href="/universe">우주 지도</Link>
-            <Link href="/collection">도감</Link>
+            <Link href="/collection">탐색</Link>
             <Link href="/columns">관측 칼럼</Link>
           </nav>
           <Link href="/login" style={{ fontSize: 13, color: '#B4BCCB', fontWeight: 600 }}>

@@ -5,7 +5,7 @@ import { currentScale } from '@/lib/progress';
 
 const NAV = [
   { href: '/universe',   label: '우주 지도' },
-  { href: '/collection', label: '도감' },
+  { href: '/collection', label: '탐색' },
   { href: '/columns',    label: '관측 칼럼' },
   { href: '/me',         label: 'MY' },
 ];

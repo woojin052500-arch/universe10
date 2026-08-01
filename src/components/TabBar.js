@@ -5,7 +5,7 @@ import { IconOrbit, IconGrid, IconArticle, IconUser } from './Icons';
 
 const items = [
   { href: '/universe', label: '우주', Icon: IconOrbit },
-  { href: '/collection', label: '도감', Icon: IconGrid },
+  { href: '/collection', label: '탐색', Icon: IconGrid },
   { href: '/columns', label: '칼럼', Icon: IconArticle },
   { href: '/me', label: 'MY', Icon: IconUser },
 ];
