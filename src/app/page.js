@@ -44,11 +44,11 @@ export default function Landing() {
 
           {/* 본문 → CTA 간격을 좁혀 하단을 안정시킴 */}
           <div style={{ display: 'flex', gap: 10, marginTop: 32, flexWrap: 'wrap' }}>
-            <Link href="/universe" style={{ flex: '1 1 220px' }}>
-              <span className="btn btn-p">우주 넓히러 가기</span>
+            <Link href="/collection" style={{ flex: '1 1 220px' }}>
+              <span className="btn btn-p">시작하기</span>
             </Link>
-            <Link href="/columns" style={{ flex: '0 1 auto' }}>
-              <span className="btn" style={{ padding: '16px 26px' }}>관측 칼럼</span>
+            <Link href="/universe" style={{ flex: '0 1 auto' }}>
+              <span className="btn" style={{ padding: '16px 26px' }}>내 진도</span>
             </Link>
           </div>
 

@@ -3,13 +3,15 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import ObjectImage from './ObjectImage';
 import { IconLock, IconCheck } from './Icons';
 import { LEVELS, objectsOfLevel } from '@/data/content';
-import { NODES, R_IN, R_OUT, lyToRadius, radiusToLy, lyText } from '@/lib/mapProjection';
+import { NODES, R_IN, lyToRadius, radiusToLy, lyText } from '@/lib/mapProjection';
+import { makeStars } from '@/lib/starfield';
 import { isLevelUnlocked, currentScale } from '@/lib/progress';
-import { OBJECTS } from '@/data/content';
 
-const MIN_K = 0.16;      // 전체 우주가 한눈에
-const MAX_K = 14;        // 행성 표면까지
-const PHOTO_AT = 30;     // 화면상 지름이 이보다 커지면 사진으로 전환
+const MIN_K = 0.16;
+const MAX_K = 16;
+const PHOTO_AT = 26;     // 화면상 지름이 이보다 커지면 사진으로 전환
+
+const STARS = makeStars();
 
 export default function SkyMap({ completed, onOpen }) {
   const wrapRef = useRef(null);
@@ -17,19 +19,15 @@ export default function SkyMap({ completed, onOpen }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const drag = useRef(null);
   const pinch = useRef(null);
+  const pointers = useRef(new Map());
 
-  /* 컨테이너 크기 */
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
-    const ro = new ResizeObserver(() => {
-      setSize({ w: el.clientWidth, h: el.clientHeight });
-    });
-    ro.observe(el);
-    setSize({ w: el.clientWidth, h: el.clientHeight });
+    const set = () => setSize({ w: el.clientWidth, h: el.clientHeight });
+    const ro = new ResizeObserver(set); ro.observe(el); set();
     return () => ro.disconnect();
   }, []);
 
-  /* 커서 지점을 고정한 채 확대/축소 */
   const zoomAt = useCallback((cx, cy, factor) => {
     setView((v) => {
       const k = Math.min(MAX_K, Math.max(MIN_K, v.k * factor));
@@ -38,7 +36,6 @@ export default function SkyMap({ completed, onOpen }) {
     });
   }, []);
 
-  /* 휠 줌 */
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
     const onWheel = (e) => {
@@ -50,8 +47,6 @@ export default function SkyMap({ completed, onOpen }) {
     return () => el.removeEventListener('wheel', onWheel);
   }, [zoomAt]);
 
-  /* 드래그 / 핀치 */
-  const pointers = useRef(new Map());
   function down(e) {
     e.currentTarget.setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -66,7 +61,6 @@ export default function SkyMap({ completed, onOpen }) {
   function move(e) {
     if (!pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
     if (pointers.current.size === 2 && pinch.current) {
       const [a, b] = [...pointers.current.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -90,17 +84,11 @@ export default function SkyMap({ completed, onOpen }) {
     if (pointers.current.size === 0) setTimeout(() => { drag.current = null; }, 0);
   }
 
-  /* 초기 위치를 중앙으로 */
   useEffect(() => {
     if (size.w && view.x === 0 && view.y === 0)
       setView((v) => ({ ...v, x: size.w / 2, y: size.h / 2 }));
-  }, [size.w, size.h]);          // eslint-disable-line
+  }, [size.w, size.h]); // eslint-disable-line
 
-  const fit = () => setView({ x: size.w / 2, y: size.h / 2, k: 0.42 });
-  const flyTo = (n, k = 2.2) =>
-    setView({ x: size.w / 2 - n.x * k, y: size.h / 2 - n.y * k, k });
-
-  /* 현재 화면에 보이는 가장 먼 거리 = 지금 내가 보고 있는 우주의 크기 */
   const fovLy = useMemo(() => {
     if (!size.w) return 0;
     const corner = Math.hypot(
@@ -110,12 +98,6 @@ export default function SkyMap({ completed, onOpen }) {
     return radiusToLy(corner);
   }, [view, size]);
 
-  /* 내 우주 경계 (완료한 천체 중 가장 먼 곳) */
-  const frontierR = useMemo(() => {
-    const done = OBJECTS.filter((o) => completed.includes(o.id));
-    return done.length ? lyToRadius(Math.max(...done.map((o) => o.ly))) : R_IN;
-  }, [completed]);
-
   return (
     <div className="sky" ref={wrapRef}
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
@@ -123,28 +105,13 @@ export default function SkyMap({ completed, onOpen }) {
       <div className="sky-world"
         style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.k})` }}>
 
-        {/* 레벨 경계 링 */}
-        {LEVELS.map((lv) => {
-          const list = objectsOfLevel(lv.id);
-          const r = lyToRadius(Math.max(...list.map((o) => o.ly)));
-          const open = isLevelUnlocked(lv.id, completed);
-          return (
-            <div key={lv.id} className="sky-ring" style={{
-              width: r * 2, height: r * 2,
-              border: `${1 / view.k}px ${open ? 'solid' : 'dashed'} ${lv.color}${open ? '2E' : '1A'}`,
-            }} />
-          );
-        })}
-
-        {/* 내 우주 경계 */}
-        <div className="sky-frontier" style={{
-          width: frontierR * 2, height: frontierR * 2,
-          border: `${1.6 / view.k}px solid rgba(232,115,127,.55)`,
-          boxShadow: `0 0 ${90 / view.k}px rgba(232,115,127,.18) inset`,
-        }} />
-
-        {/* 중심 = 나 */}
-        <div className="sky-me" style={{ width: 14 / view.k, height: 14 / view.k }} />
+        {/* 배경 별 — 월드에 박혀 있어 이동·확대에 같이 반응합니다 */}
+        <svg className="sky-stars" width="5200" height="5200" viewBox="-2600 -2600 5200 5200"
+          style={{ left: -2600, top: -2600 }}>
+          {STARS.map((s, i) => (
+            <circle key={i} cx={s.x} cy={s.y} r={s.s} fill={s.c} opacity={s.o} />
+          ))}
+        </svg>
 
         {/* 천체 */}
         {NODES.map((n) => {
@@ -165,38 +132,32 @@ export default function SkyMap({ completed, onOpen }) {
                 onOpen({ node: n, unlocked: open, done });
               }}
               aria-label={o.nameKo}>
+
               {asPhoto ? (
                 <div className="sky-photo"
-                  style={{
-                    width: n.size, height: n.size,
-                    opacity: open ? (done ? 1 : .62) : .22,
-                    boxShadow: done ? `0 0 ${34 * inv}px ${lv.color}55` : 'none',
-                    borderWidth: 1.2 * inv,
-                    borderColor: done ? `${lv.color}88` : 'rgba(255,255,255,.14)',
-                  }}>
-                  <ObjectImage obj={o} fill radius={9999} />
+                  style={{ width: n.size, height: n.size,
+                    opacity: open ? (done ? 1 : .5) : .16 }}>
+                  <ObjectImage obj={o} fill />
                 </div>
               ) : (
                 <span className="sky-dot" style={{
-                  width: Math.max(4, onScreen) * inv,
-                  height: Math.max(4, onScreen) * inv,
-                  background: open ? lv.color : `${lv.color}44`,
-                  opacity: done ? 1 : .55,
-                  boxShadow: done ? `0 0 ${9 * inv}px ${lv.color}` : 'none',
+                  width: Math.max(3.4, onScreen) * inv,
+                  height: Math.max(3.4, onScreen) * inv,
+                  background: open ? '#fff' : 'rgba(255,255,255,.34)',
+                  opacity: done ? 1 : .62,
+                  boxShadow: `0 0 ${(done ? 9 : 5) * inv}px ${done ? lv.color : 'rgba(255,255,255,.6)'}`,
                 }} />
               )}
 
-              {/* 이름표 — 줌과 무관하게 같은 크기로 */}
-              {(view.k > 0.3 || n.size > 130) && (
-                <span className="sky-label" style={{
-                  transform: `translate(-50%, ${(asPhoto ? n.size / 2 : 8) + 6 * inv}px) scale(${inv})`,
-                  color: done ? '#fff' : open ? '#9AA3B6' : '#4E5566',
-                }}>
-                  {o.nameKo}
-                  {done && <IconCheck size={10} style={{ color: lv.color, marginLeft: 3, verticalAlign: -1 }} />}
-                  {!open && <IconLock size={9} style={{ marginLeft: 3, verticalAlign: -1 }} />}
-                </span>
-              )}
+              <span className="sky-label" style={{
+                transform: `translate(-50%, ${(asPhoto ? n.size / 2 : 6) + 7 * inv}px) scale(${inv})`,
+                color: done ? '#EEF2F8' : open ? '#8892A6' : '#4A5164',
+                opacity: view.k > 0.26 || n.size > 120 ? 1 : 0,
+              }}>
+                {o.nameKo}
+                {done && <IconCheck size={9} style={{ color: lv.color, marginLeft: 3, verticalAlign: -1 }} />}
+                {!open && <IconLock size={8} style={{ marginLeft: 3, verticalAlign: -1 }} />}
+              </span>
             </button>
           );
         })}
@@ -204,34 +165,25 @@ export default function SkyMap({ completed, onOpen }) {
 
       {/* ── HUD ── */}
       <div className="sky-hud-tl">
-        <div className="eyebrow" style={{ color: 'var(--muted)' }}>MY UNIVERSE</div>
         <div className="sky-scale">{currentScale(completed)}</div>
-        <div className="sky-fov">보고 있는 범위 · {lyText(fovLy)}</div>
+        <div className="sky-fov">시야 {lyText(fovLy)}</div>
       </div>
 
       <div className="sky-hud-br">
-        <button className="sky-btn" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.45)} aria-label="확대">＋</button>
-        <button className="sky-btn" onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.45)} aria-label="축소">−</button>
-        <button className="sky-btn wide" onClick={fit}>전체</button>
+        <button className="sky-btn" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.5)} aria-label="확대">＋</button>
+        <button className="sky-btn" onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.5)} aria-label="축소">−</button>
       </div>
 
-      <div className="sky-hud-b">
-        <span>드래그로 이동 · 휠/핀치로 확대 · 천체를 누르면 정보가 열립니다</span>
-      </div>
-
-      {/* 빠른 이동 */}
       <div className="sky-jump">
         {LEVELS.map((lv) => {
           const list = objectsOfLevel(lv.id);
           const r = lyToRadius(list[Math.floor(list.length / 2)].ly);
           const open = isLevelUnlocked(lv.id, completed);
           return (
-            <button key={lv.id} className="chip" disabled={!open}
-              style={{ color: open ? lv.color : '#4E5566',
-                borderColor: open ? `${lv.color}44` : 'var(--line)',
-                opacity: open ? 1 : .45 }}
-              onClick={() => setView({ x: size.w / 2, y: size.h / 2, k: (R_IN + 60) / r * 1.1 })}>
-              Lv.{lv.id} {lv.name}
+            <button key={lv.id} className="jump" disabled={!open}
+              style={{ color: open ? '#C3CAD8' : '#454C5C' }}
+              onClick={() => setView({ x: size.w / 2, y: size.h / 2, k: (R_IN + 70) / r * 1.15 })}>
+              {lv.name}
             </button>
           );
         })}

@@ -200,62 +200,62 @@ button{font-family:inherit;border:none;background:none;cursor:pointer;color:inhe
 
 /* ═══════════ 우주 탐색 지도 ═══════════ */
 .sky{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:grab;
-  background:radial-gradient(ellipse at 50% 42%,#0B0A14 0%,#05070E 62%,#03040A 100%)}
+  background:#020307}
 .sky:active{cursor:grabbing}
-.sky::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.55;
+/* 아주 먼 배경 별 — 화면에 고정되어 깊이감을 만듭니다 */
+.sky::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
   background-image:
-    radial-gradient(1px 1px at 8% 12%,#fff,transparent),
-    radial-gradient(1px 1px at 27% 63%,#fff,transparent),
-    radial-gradient(1.4px 1.4px at 44% 22%,#fff,transparent),
-    radial-gradient(1px 1px at 61% 81%,#fff,transparent),
-    radial-gradient(1px 1px at 73% 34%,#fff,transparent),
-    radial-gradient(1.4px 1.4px at 88% 58%,#fff,transparent),
-    radial-gradient(1px 1px at 17% 88%,#fff,transparent),
-    radial-gradient(1px 1px at 93% 15%,#fff,transparent),
-    radial-gradient(1px 1px at 36% 45%,#fff,transparent),
-    radial-gradient(1px 1px at 55% 6%,#fff,transparent)}
-.sky-world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+    radial-gradient(.7px .7px at 6% 14%,#fff,transparent),
+    radial-gradient(.7px .7px at 23% 71%,#dfe8ff,transparent),
+    radial-gradient(.6px .6px at 41% 29%,#fff,transparent),
+    radial-gradient(.8px .8px at 58% 83%,#fff,transparent),
+    radial-gradient(.6px .6px at 71% 41%,#ffe9ce,transparent),
+    radial-gradient(.7px .7px at 87% 62%,#fff,transparent),
+    radial-gradient(.6px .6px at 14% 91%,#dfe8ff,transparent),
+    radial-gradient(.7px .7px at 95% 19%,#fff,transparent),
+    radial-gradient(.6px .6px at 33% 48%,#fff,transparent),
+    radial-gradient(.7px .7px at 64% 8%,#fff,transparent)}
+/* 시야 가장자리를 살짝 어둡게 — 접안렌즈를 들여다보는 느낌 */
+.sky::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,transparent 52%,rgba(2,3,7,.62) 100%)}
 
-.sky-ring,.sky-frontier{position:absolute;left:0;top:0;border-radius:50%;
-  transform:translate(-50%,-50%);pointer-events:none}
-.sky-frontier{background:radial-gradient(circle,rgba(232,115,127,.05) 60%,rgba(232,115,127,.13) 100%)}
-.sky-me{position:absolute;left:0;top:0;transform:translate(-50%,-50%);border-radius:50%;
-  background:#fff;box-shadow:0 0 22px #fff,0 0 60px rgba(255,255,255,.4);pointer-events:none}
+.sky-world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.sky-stars{position:absolute;pointer-events:none;overflow:visible}
 
 .sky-node{position:absolute;transform:translate(-50%,-50%);padding:0;border:none;
   background:none;display:grid;place-items:center;cursor:pointer}
-.sky-photo{border-radius:50%;overflow:hidden;border-style:solid;
-  transition:opacity .3s,box-shadow .3s}
+/* 가장자리를 부드럽게 날려 검은 하늘에 자연스럽게 얹힙니다 */
+.sky-photo{position:relative;border-radius:50%;overflow:hidden;transition:opacity .35s;
+  -webkit-mask-image:radial-gradient(circle,#000 52%,rgba(0,0,0,.55) 72%,transparent 88%);
+  mask-image:radial-gradient(circle,#000 52%,rgba(0,0,0,.55) 72%,transparent 88%)}
 .sky-node:hover .sky-photo{opacity:1!important}
 .sky-dot{border-radius:50%;display:block;transition:opacity .3s}
 .sky-label{position:absolute;left:50%;top:50%;transform-origin:top center;
-  font-size:11px;font-weight:600;white-space:nowrap;pointer-events:none;
-  text-shadow:0 1px 8px rgba(0,0,0,.9)}
+  font-size:10.5px;font-weight:500;letter-spacing:.2px;white-space:nowrap;
+  pointer-events:none;text-shadow:0 1px 10px #000,0 0 3px #000;transition:opacity .3s}
 
-/* HUD */
-.sky-hud-tl{position:absolute;left:20px;top:78px;pointer-events:none}
-@media(min-width:900px){.sky-hud-tl{left:56px;top:96px}}
-.sky-scale{font-size:clamp(26px,5.2vw,40px);font-weight:800;color:#fff;
-  letter-spacing:-.05em;margin-top:3px;text-shadow:0 2px 24px rgba(0,0,0,.8)}
-.sky-fov{font-size:11.5px;color:#8A92A4;margin-top:5px}
+/* HUD — 최소한만 */
+.sky-hud-tl{position:absolute;left:20px;top:74px;pointer-events:none}
+@media(min-width:900px){.sky-hud-tl{left:56px;top:92px}}
+.sky-scale{font-size:clamp(22px,4.4vw,32px);font-weight:800;color:#fff;
+  letter-spacing:-.05em;text-shadow:0 2px 22px #000}
+.sky-fov{font-size:11px;color:#6E778A;margin-top:4px;letter-spacing:.2px}
 
-.sky-hud-br{position:absolute;right:16px;bottom:calc(var(--tab-h) + 58px);
-  display:flex;flex-direction:column;gap:7px}
-@media(min-width:900px){.sky-hud-br{right:56px;bottom:76px}}
-.sky-btn{width:42px;height:42px;border-radius:12px;font-size:17px;font-weight:600;
-  background:rgba(10,14,23,.78);backdrop-filter:blur(14px);
-  border:1px solid var(--line);color:var(--text);display:grid;place-items:center;transition:.18s}
-.sky-btn:hover{background:rgba(255,255,255,.12)}
-.sky-btn.wide{font-size:12px;font-weight:700}
+.sky-hud-br{position:absolute;right:16px;bottom:calc(var(--tab-h) + 46px);
+  display:flex;flex-direction:column;gap:6px}
+@media(min-width:900px){.sky-hud-br{right:56px;bottom:64px}}
+.sky-btn{width:38px;height:38px;border-radius:10px;font-size:16px;font-weight:500;
+  background:rgba(255,255,255,.05);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.10);color:#C3CAD8;display:grid;place-items:center;transition:.18s}
+.sky-btn:hover{background:rgba(255,255,255,.13);color:#fff}
 
-.sky-hud-b{position:absolute;left:0;right:0;bottom:calc(var(--tab-h) + 14px);
-  text-align:center;font-size:10.5px;color:#5F6879;pointer-events:none;padding:0 20px}
-@media(min-width:900px){.sky-hud-b{bottom:22px}}
-
-.sky-jump{position:absolute;left:16px;right:16px;bottom:calc(var(--tab-h) + 34px);
-  display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
-@media(min-width:900px){.sky-jump{left:56px;right:auto;bottom:76px;justify-content:flex-start}}
-.sky-jump .chip{background:rgba(10,14,23,.78);backdrop-filter:blur(14px)}
+.sky-jump{position:absolute;left:0;right:0;bottom:calc(var(--tab-h) + 16px);
+  display:flex;gap:20px;justify-content:center}
+@media(min-width:900px){.sky-jump{left:56px;right:auto;bottom:26px;justify-content:flex-start}}
+.jump{font-size:11.5px;font-weight:600;letter-spacing:.3px;padding:6px 2px;
+  border-bottom:1px solid transparent;transition:.18s}
+.jump:hover:not(:disabled){color:#fff!important;border-bottom-color:rgba(255,255,255,.4)}
+.jump:disabled{cursor:default}
 
 /* ═══════════ 천체 팝업 ═══════════ */
 .modal-bg{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;
