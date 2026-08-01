@@ -4,10 +4,9 @@ import { IconOrbit } from './Icons';
 import { currentScale } from '@/lib/progress';
 
 const NAV = [
-  { href: '/universe',   label: '우주 지도' },
-  { href: '/collection', label: '탐색' },
-  { href: '/columns',    label: '관측 칼럼' },
-  { href: '/me',         label: 'MY' },
+  { href: '/universe', label: '우주' },
+  { href: '/columns',  label: '관측 칼럼' },
+  { href: '/me',       label: 'MY' },
 ];
 
 export default function SiteHeader({ active, completed }) {

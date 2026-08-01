@@ -5,7 +5,7 @@ import { IconLock, IconCheck } from './Icons';
 import { LEVELS, objectsOfLevel } from '@/data/content';
 import { NODES, R_IN, lyToRadius, radiusToLy, lyText } from '@/lib/mapProjection';
 import { makeStars } from '@/lib/starfield';
-import { isLevelUnlocked, currentScale } from '@/lib/progress';
+import { isLevelUnlocked, currentScale, levelStats } from '@/lib/progress';
 
 const MIN_K = 0.16;
 const MAX_K = 260;      // 행성 표면까지 들어갈 수 있게
@@ -227,6 +227,21 @@ export default function SkyMap({ completed, onOpen }) {
       <div className="sky-hud-tl">
         <div className="sky-scale">{currentScale(completed)}</div>
         <div className="sky-fov">시야 {lyText(fovLy)} · {view.k.toFixed(view.k < 10 ? 1 : 0)}×</div>
+        <div className="sky-prog">
+          {(() => {
+            const cur = [...LEVELS].reverse().find((l) => isLevelUnlocked(l.id, completed)) || LEVELS[0];
+            const st = levelStats(cur.id, completed);
+            return (
+              <>
+                <span style={{ color: cur.color }}>Lv.{cur.id} {cur.name}</span>
+                <span className="sky-prog-bar">
+                  <i style={{ width: `${st.ratio * 100}%`, background: cur.color }} />
+                </span>
+                <span>{st.done}/{st.total}</span>
+              </>
+            );
+          })()}
+        </div>
       </div>
 
       <div className="sky-hud-br">

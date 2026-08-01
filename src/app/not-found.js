@@ -14,9 +14,9 @@ export default function NotFound() {
           <p style={{ fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.8 }}>
             아직 관측되지 않은 영역이에요.
           </p>
-          <Link href="/collection" style={{ display: 'block', marginTop: 26, maxWidth: 260,
+          <Link href="/universe" style={{ display: 'block', marginTop: 26, maxWidth: 260,
             marginLeft: 'auto', marginRight: 'auto' }}>
-            <span className="btn btn-p">탐색으로 돌아가기</span>
+            <span className="btn btn-p">우주로 돌아가기</span>
           </Link>
         </div>
       </main>
