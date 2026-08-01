@@ -53,31 +53,49 @@ export default function SkyMap({ completed, onOpen }) {
     if (pointers.current.size === 1) {
       drag.current = { sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y, moved: 0 };
     } else if (pointers.current.size === 2) {
-      const [a, b] = [...pointers.current.values()];
-      pinch.current = { d: Math.hypot(a.x - b.x, a.y - b.y), k: view.k };
+      const pts = [...pointers.current.values()];
+      const a = pts[0], b = pts[1];
+      const d = a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+      pinch.current = d > 0 ? { d, k: view.k } : null;
       drag.current = null;
     }
   }
   function move(e) {
     if (!pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointers.current.size === 2 && pinch.current) {
-      const [a, b] = [...pointers.current.values()];
+
+    // ★ ref 값을 먼저 지역 변수로 복사한 뒤 setView 를 호출합니다.
+    //   업데이터 안에서 ref 를 직접 읽으면, React 가 업데이터를 나중에
+    //   실행하는 사이 포인터가 떨어져 ref 가 null 이 되어 터집니다.
+    if (pointers.current.size === 2) {
+      const p = pinch.current;
+      if (!p || !p.d) return;
+      const pts = [...pointers.current.values()];
+      const a = pts[0], b = pts[1];
+      if (!a || !b) return;
       const d = Math.hypot(a.x - b.x, a.y - b.y);
-      const rect = wrapRef.current.getBoundingClientRect();
-      const cx = (a.x + b.x) / 2 - rect.left, cy = (a.y + b.y) / 2 - rect.top;
+      if (!d) return;
+      const el = wrapRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const cx = (a.x + b.x) / 2 - rect.left;
+      const cy = (a.y + b.y) / 2 - rect.top;
+      const target = Math.min(MAX_K, Math.max(MIN_K, p.k * (d / p.d)));
       setView((v) => {
-        const k = Math.min(MAX_K, Math.max(MIN_K, pinch.current.k * (d / pinch.current.d)));
-        const f = k / v.k;
-        return { k, x: cx - (cx - v.x) * f, y: cy - (cy - v.y) * f };
+        const f = target / v.k;
+        return { k: target, x: cx - (cx - v.x) * f, y: cy - (cy - v.y) * f };
       });
       return;
     }
-    if (!drag.current) return;
-    const dx = e.clientX - drag.current.sx, dy = e.clientY - drag.current.sy;
-    drag.current.moved = Math.max(drag.current.moved, Math.hypot(dx, dy));
-    setView((v) => ({ ...v, x: drag.current.vx + dx, y: drag.current.vy + dy }));
+
+    const dg = drag.current;
+    if (!dg) return;
+    const dx = e.clientX - dg.sx, dy = e.clientY - dg.sy;
+    dg.moved = Math.max(dg.moved, Math.hypot(dx, dy));
+    const nx = dg.vx + dx, ny = dg.vy + dy;
+    setView((v) => ({ ...v, x: nx, y: ny }));
   }
+
   function up(e) {
     pointers.current.delete(e.pointerId);
     if (pointers.current.size < 2) pinch.current = null;
@@ -116,7 +134,7 @@ export default function SkyMap({ completed, onOpen }) {
         {/* 천체 */}
         {NODES.map((n) => {
           const o = n.obj;
-          const lv = LEVELS.find((l) => l.id === o.level);
+          const lv = LEVELS.find((l) => l.id === o.level) || LEVELS[0];
           const open = isLevelUnlocked(o.level, completed);
           const done = completed.includes(o.id);
           const onScreen = n.size * view.k;
@@ -177,6 +195,7 @@ export default function SkyMap({ completed, onOpen }) {
       <div className="sky-jump">
         {LEVELS.map((lv) => {
           const list = objectsOfLevel(lv.id);
+          if (!list.length) return null;
           const r = lyToRadius(list[Math.floor(list.length / 2)].ly);
           const open = isLevelUnlocked(lv.id, completed);
           return (
